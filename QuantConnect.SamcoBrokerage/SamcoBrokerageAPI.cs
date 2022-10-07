@@ -203,6 +203,7 @@ namespace QuantConnect.Brokerages.Samco
 
                 // we need to drop the last bar provided by the exchange as its open time is a history
                 // request's end time
+//TODO: deserializing has issues as the field names do not match
                 var candles = JsonConvert.DeserializeObject<CandleResponse>(response.Content);
 
                 if (candles.intradayCandleData?.Any() == null)
