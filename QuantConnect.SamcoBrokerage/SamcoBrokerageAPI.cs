@@ -185,7 +185,7 @@ namespace QuantConnect.Brokerages.Samco
                 string endpoint = $"/intraday/candleData?symbolName={brokerageSymbol}&fromDate={start}&toDate={end}&exchange={exchange}&interval={interval}";
                 if (isIndex)
                 {
-                    endpoint = $"/intraday/indexCandleData?symbolName={brokerageSymbol}&fromDate={start}&toDate={end}&exchange={exchange}&interval={interval}";
+                    endpoint = $"/intraday/indexCandleData?indexName={brokerageSymbol}&fromDate={start}&toDate={end}&exchange={exchange}&interval={interval}";
                 }
 
                 var restRequest = new RestRequest(endpoint, Method.GET);
