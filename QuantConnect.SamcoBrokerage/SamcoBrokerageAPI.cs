@@ -165,6 +165,9 @@ namespace QuantConnect.Brokerages.Samco
         public IEnumerable<TradeBar> GetIntradayCandles(Symbol leanSymbol, string exchange, DateTime startDateTime, DateTime endDateTime, Resolution resolution = Resolution.Minute, bool isIndex = false)
         {
             var brokerageSymbol = leanSymbol.ID.Symbol;
+            //hard coding the index string mapping in order to handle idiosyncracies of the broker API
+            if (brokerageSymbol == "NIFTY" && leanSymbol.SecurityType==SecurityType.Index) brokerageSymbol = "NIFTY 50";
+            if (brokerageSymbol == "BANKNIFTY" && leanSymbol.SecurityType == SecurityType.Index) brokerageSymbol = "NIFTY BANK";
             var interval = 1;
             if (resolution == Resolution.Hour)
             {
