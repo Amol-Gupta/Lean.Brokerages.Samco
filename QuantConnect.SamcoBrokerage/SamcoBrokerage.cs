@@ -231,7 +231,7 @@ namespace QuantConnect.Brokerages.Samco
             if (string.IsNullOrEmpty(samcoProductTypeUpper) || samcoProductTypeUpper == productTypeMIS)
             {
                 var positions = _samcoAPI.GetPositions("DAY");
-                if (positions.Status != "Failure")
+                if (positions.status != "Failure")
                 {
                     foreach (var position in positions.PositionDetails)
                     {
@@ -281,7 +281,7 @@ namespace QuantConnect.Brokerages.Samco
             if (string.IsNullOrEmpty(samcoProductTypeUpper) || samcoProductTypeUpper == productTypeNRML)
             {
                 var positions = _samcoAPI.GetPositions("NET");
-                if (positions.Status != "Failure")
+                if (positions.status != "Failure")
                 {
                     foreach (var position in positions.PositionDetails)
                     {
@@ -321,11 +321,11 @@ namespace QuantConnect.Brokerages.Samco
             {
                 if (_tradingSegment.ToUpperInvariant() == "EQUITY")
                 {
-                    amt = Convert.ToDecimal(response.EquityLimit.NetAvailableMargin, CultureInfo.InvariantCulture);
+                    amt = Convert.ToDecimal(response.equityLimit.netAvailableMargin, CultureInfo.InvariantCulture);
                 }
                 else if (_tradingSegment.ToUpperInvariant() == "COMMODITY")
                 {
-                    amt = Convert.ToDecimal(response.CommodityLimit.NetAvailableMargin, CultureInfo.InvariantCulture);
+                    amt = Convert.ToDecimal(response.commodityLimit.netAvailableMargin, CultureInfo.InvariantCulture);
                 }
                 else
                 {
@@ -351,7 +351,9 @@ namespace QuantConnect.Brokerages.Samco
                 yield break;
             }
 
-            if (request.Symbol.SecurityType != SecurityType.Equity && request.Symbol.SecurityType != SecurityType.Future && request.Symbol.SecurityType != SecurityType.Option)
+            if (request.Symbol.SecurityType != SecurityType.Equity && request.Symbol.SecurityType != SecurityType.Future && 
+                request.Symbol.SecurityType != SecurityType.Option && request.Symbol.SecurityType !=SecurityType.Index &&
+                request.Symbol.SecurityType != SecurityType.IndexOption)
             {
                 OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, "InvalidSecurityType",
                     $"{request.Symbol.SecurityType} security type not supported, no history returned"));

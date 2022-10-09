@@ -22,6 +22,44 @@ namespace QuantConnect.Brokerages.Samco.SamcoMessages
 {
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
+    public class loginResponse
+    {
+        public string serverTime { get; set; }
+        public string msgId { get; set; }
+        public string status { get; set; }
+        public string statusMessage { get; set; }
+        public string sessionToken { get; set; }
+        public string accountID { get; set; }
+        public string accountName { get; set; }
+        public string[] exchangeList { get; set; }
+        public string[] orderTypeList { get; set; }
+        public string[] productList { get; set; }
+    }
+
+    public class eqDerivSearchResponse
+    {
+        public class searchResult
+        {
+            public string exchange { get; set; }
+            public string scripDescription { get; set; }
+            public string tradingSymbol { get; set; }
+            public string isin { get; set; }
+            public string bodLotQuantity { get; set; }
+            public decimal tickSize { get; set; }
+            public string instrument { get; set; }
+            public int quantityInLots { get; set; }
+        }
+        public string serverTime { get; set; }
+        public string msgId { get; set; }
+        public string status { get; set; }
+        public string statusMessage { get; set; }
+
+        
+        public IList<searchResult> searchResults { get; set; }
+    }
+
+    
+
     public class HoldingsResponse
     {
         public class HoldingDetail
@@ -45,11 +83,90 @@ namespace QuantConnect.Brokerages.Samco.SamcoMessages
 
         public string serverTime { get; set; }
         public string msgId { get; set; }
-
         public string status { get; set; }
+        public string statusMessage { get; set; }
         public IList<HoldingDetail> holdingDetails { get; set; }
     }
 
+
+    public class intradayCandleDataResponse
+    {
+        public class IntradayCandleData
+        {
+            public string dateTime { get; set; }
+            public string open { get; set; }
+            public string high { get; set; }
+            public string low { get; set; }
+            public string close { get; set; }
+            public string volume { get; set; }
+        }
+        public string serverTime { get; set; }
+        public string msgId { get; set; }
+        public string status { get; set; }
+        public string statusMessage { get; set; }
+        public IntradayCandleData[] intradayCandleData { get; set; }
+
+    }
+
+    public class indexIntradayCandleDataResponse
+    {
+        public string serverTime { get; set; }
+        public string msgId { get; set; }
+        public string status { get; set; }
+        public string statusMessage { get; set; }
+        public class IndexIntradayCandleData
+        {
+            public string dateTime { get; set; }
+            public string open { get; set; }
+            public string high { get; set; }
+            public string low { get; set; }
+            public string close { get; set; }
+            public string volume { get; set; }
+        }
+        public IndexIntradayCandleData[] indexIntradayCandleData { get; set; }
+    }
+
+
+
+    public class historicalCandleDataResponse
+    {
+        public class HistoricalCandleData
+        {
+            public string date { get; set; }
+            public string open { get; set; }
+            public string high { get; set; }
+            public string low { get; set; }
+            public string close { get; set; }
+            public string ltp { get; set; }
+            public string volume { get; set; }
+        }
+        public string serverTime { get; set; }
+        public string msgId { get; set; }
+        public string status { get; set; }
+        public string statusMessage { get; set; }
+        public HistoricalCandleData[] historicalCandleData { get; set; }
+    }
+
+    public class indexHistoricalCandleDataResponse
+    {
+        public class IndexHistoricalCandleData
+        {
+            public string date { get; set; }
+            public string open { get; set; }
+            public string high { get; set; }
+            public string low { get; set; }
+            public string close { get; set; }
+            public string ltp { get; set; }
+            public string volume { get; set; }
+        }
+        public string serverTime { get; set; }
+        public string msgId { get; set; }
+        public string status { get; set; }
+        public string statusMessage { get; set; }
+        public IndexHistoricalCandleData[] indexHistoricalCandleData { get; set; }
+    }
+
+    //TODO: to be phased out with newer implementation of API
     public class CandleResponse
     {
         public class IntradayCandleData
@@ -74,6 +191,8 @@ namespace QuantConnect.Brokerages.Samco.SamcoMessages
 
         public string serverTime { get; set; }
         public string msgId { get; set; }
+        public string status { get; set; }
+        public string statusMessage { get; set; }
         public IList<IntradayCandleData> intradayCandleData { get; set; }
         public IList<HistoricalCandleData> historicalCandleData { get; set; }
     }
@@ -90,6 +209,76 @@ namespace QuantConnect.Brokerages.Samco.SamcoMessages
         public string rejectionReason { get; set; }
         public OrderDetails orderDetails { get; set; }
         public IList<string> validationErrors { get; set; }
+    }
+
+    public class indexQuoteResponse
+    {
+        public string serverTime { get; set; }
+        public string msgId { get; set; }
+        public string status { get; set; }
+        public string statusMessage { get; set; }
+
+        public string indexName { get; set; }
+        public string listingId { get; set; }
+        public string lastTradedTime { get; set; }
+        public decimal lastTradedPrice { get; set; }
+        public decimal spotPrice { get; set; }
+        public decimal changePercentage { get; set; }
+        public int lastTradedQuantity { get; set; }
+        public decimal averagePrice { get; set; }
+        public decimal openValue { get; set; }
+        public decimal highValue { get; set; }
+        public decimal lowValue { get; set; }
+        public decimal closeValue { get; set; }
+        public int totalBuyQuantity { get; set; }
+        public int totalSellQuantity { get; set; }
+        public decimal totalTradedValue { get; set; }
+        public decimal totalTradedVolume { get; set; }
+        public decimal openInterest { get; set; }
+        public decimal getoIChangePer { get; set; }
+    }
+
+
+    public class optionChainResponse
+    {
+        public class Bid
+        {
+            public int number { get; set; }
+            public int quantity { get; set; }
+            public string price { get; set; }
+        }
+        public class Ask
+        {
+            public int number { get; set; }
+            public int quantity { get; set; }
+            public string price { get; set; }
+        }
+        public class optionChainDetail
+        {
+            public string tradingSymbol { get; set; }
+            public string exchange { get; set; }
+            public string symbol { get; set; }
+            public string strikePrice { get; set; }
+            public string expiryDate { get; set; }
+            public string instrument { get; set; }
+            public string optionType { get; set; }
+            public string underLyingSymbol { get; set; }
+            public string spotPrice { get; set; }
+            public string lastTradedPrice { get; set; }
+            public string openInterest { get; set; }
+            public string openInterestChange { get; set; }
+            public string oichangePer { get; set; }
+            public  Bid[] bestBids { get; set; }
+            public Ask[] bestAsks { get; set; }
+
+        }
+
+        public string serverTime { get; set; }
+
+        public string msgId { get; set; }
+        public string status { get; set; }
+        public string statusMessage { get; set; }
+        public optionChainDetail[] optionChainDetails { get; set; }
     }
 
     public class QuoteResponse
@@ -257,38 +446,25 @@ namespace QuantConnect.Brokerages.Samco.SamcoMessages
 
     public class UserLimitResponse
     {
-        [JsonProperty("serverTime")]
-        public string ServerTime { get; set; }
+        public string serverTime { get; set; }
+        public string msgId { get; set; }
+        public string orderNumber { get; set; }
+        public string status { get; set; }
+        public string statusMessage { get; set; }
 
-        [JsonProperty("msgId")]
-        public string MsgId { get; set; }
-
-        [JsonProperty("equityLimit")]
-        public SegmentLimit EquityLimit { get; set; }
-
-        [JsonProperty("commodityLimit")]
-        public SegmentLimit CommodityLimit { get; set; }
+        
+        public SegmentLimit equityLimit { get; set; }
+        public SegmentLimit commodityLimit { get; set; }
     }
 
     public class SegmentLimit
     {
-        [JsonProperty("grossAvailableMargin")]
-        public string GrossAvailableMargin { get; set; }
-
-        [JsonProperty("payInToday")]
-        public decimal PayInToday { get; set; }
-
-        [JsonProperty("notionalCash")]
-        public decimal NotionalCash { get; set; }
-
-        [JsonProperty("collateralMarginAgainstShares")]
-        public decimal CollateralMarginAgainstShares { get; set; }
-
-        [JsonProperty("marginUsed")]
-        public string MarginUsed { get; set; }
-
-        [JsonProperty("netAvailableMargin")]
-        public string NetAvailableMargin { get; set; }
+        public string grossAvailableMargin { get; set; }
+        public decimal payInToday { get; set; }
+        public decimal notionalCash { get; set; }
+        public decimal collateralMarginAgainstShares { get; set; }
+        public string marginUsed { get; set; }
+        public string netAvailableMargin { get; set; }
     }
 
     public class ScripMaster
@@ -330,13 +506,13 @@ namespace QuantConnect.Brokerages.Samco.SamcoMessages
     public class PositionsResponse
     {
         [JsonProperty("serverTime")]
-        public string ServerTime { get; set; }
+        public string serverTime { get; set; }
 
         [JsonProperty("msgId")]
-        public string MsgId { get; set; }
+        public string msgId { get; set; }
 
         [JsonProperty("status")]
-        public string Status { get; set; }
+        public string status { get; set; }
 
         [JsonProperty("statusMessage")]
         public string StatusMessage { get; set; }
@@ -442,6 +618,59 @@ namespace QuantConnect.Brokerages.Samco.SamcoMessages
 
         [JsonProperty("dayGainAndLossAmount")]
         public string DayGainAndLossAmount { get; set; }
+    }
+
+    public class SamcoLogoutResponse
+    {
+        public string serverTime { get; set; }
+        public string msgId { get; set; }
+        public string orderNumber { get; set; }
+        public string status { get; set; }
+        public string statusMessage { get; set; }
+    }
+
+    public class TradeBookResponse
+    {
+        public class tradeBookDetail
+        {
+            public string orderNumber { get; set; }
+            public string exchange { get; set; }
+            public string tradingSymbol { get; set; }
+            public string symbolDescription { get; set; }
+            public string transactionType { get; set; }
+            public string productCode { get; set; }
+            public string orderType { get; set; }
+            public string orderPrice { get; set; }
+            public string quantity { get; set; }
+            public string disclosedQuantity { get; set; }
+            public string triggerPrice { get; set; }
+            public string marketProtection { get; set; }
+            public string orderValidity { get; set; }
+            public string orderStatus { get; set; }
+            public string orderValue { get; set; }
+            public string instrumentName { get; set; }
+            public string orderTime { get; set; }
+            public string userId { get; set; }
+            public string filledQuantity { get; set; }
+            public string unfilledQuantity { get; set; }
+            public string exchangeConfirmationTime { get; set; }
+            public string coverOrderPercentage { get; set; }
+            public string exchangeOrderNumber { get; set; }
+            public string tradeNumber { get; set; }
+            public string tradePrice { get; set; }
+            public string tradeDate { get; set; }
+            public string tradeTime { get; set; }
+            public string strikePrice { get; set; }
+            public string optionType { get; set; }
+            public string lastTradePrice { get; set; }
+            public string expiry { get; set; }
+        }
+        public string serverTime { get; set; }
+        public string msgId { get; set; }
+        public string orderNumber { get; set; }
+        public string status { get; set; }
+        public string statusMessage { get; set; }
+        public tradeBookDetail[] tradeBookDetails { get; set; }
     }
 
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
