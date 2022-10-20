@@ -5,6 +5,7 @@ using QuantConnect.Brokerages.Samco.SamcoMessages;
 using QuantConnect.Data.Market;
 using QuantConnect.Logging;
 using QuantConnect.Orders;
+using QuantConnect.Securities;
 using QuantConnect.Util;
 using RestSharp;
 using System;
@@ -16,17 +17,22 @@ using System.Web;
 
 namespace QuantConnect.Brokerages.Samco
 {
-    public class SamcoBrokerageRestAPIClient : IDisposable
+    public partial class SamcoBrokerageRestAPIClient : IDisposable
     {
         private readonly RateGate _restRateLimiter = new RateGate(10, TimeSpan.FromSeconds(1));
         private readonly string _tokenHeader = "x-session-token";
         private string _token = "";
+        private SamcoSymbolMapper _symbolMapper;
+        private ISecurityProvider _securityProvider;
 
         /// <summary>
         /// Constructor for Samco API
         /// </summary>
-        public SamcoBrokerageRestAPIClient()
+        public SamcoBrokerageRestAPIClient( SamcoSymbolMapper symbolMapper)
+
         {
+            _symbolMapper = symbolMapper;
+            
             RestClient = new RestClient("https://api.stocknote.com");
         }
 
@@ -277,118 +283,7 @@ namespace QuantConnect.Brokerages.Samco
         }
 
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="symbolName"></param>
-        /// <param name="fromDate"></param>
-        /// <param name="exchange"></param>
-        /// <param name="toDate"></param>
-        /// <param name="interval"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        public intradayCandleDataResponse GetIntradayCandleData(string symbolName, string fromDate, string exchange = "NSE", string toDate = null, string interval = null)
-        {
-            var request = new RestRequest(string.Format(CultureInfo.InvariantCulture, "/intraday/candleData"), Method.GET);
-            request.AddParameter("symbolName", symbolName);
-            request.AddParameter("fromDate", fromDate);
-            if (exchange != null)
-                request.AddParameter("exchange", exchange);
-            if (toDate != null)
-                request.AddParameter("toDate", toDate);
-            if (interval != null)
-                request.AddParameter("interval", interval);
-
-            var response = ExecuteRestRequest(request);
-
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                throw new Exception(
-                    $"SamcoBrokerage.Authorize: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
-                );
-            }
-
-
-            var _intradayCandleDataResponse = JsonConvert.DeserializeObject<intradayCandleDataResponse>(response.Content);
-            return _intradayCandleDataResponse;
-        }
-
-        public indexIntradayCandleDataResponse GetIndexIntradayCandleData(string indexName, string fromDate, string toDate = null, string interval = null)
-        {
-            var request = new RestRequest(string.Format(CultureInfo.InvariantCulture, "/intraday/indexCandleData"), Method.GET);
-            request.AddParameter("indexName", indexName);
-            request.AddParameter("fromDate", fromDate);
-            if (toDate != null)
-                request.AddParameter("toDate", toDate);
-            if (interval != null)
-                request.AddParameter("interval", interval);
-            var response = ExecuteRestRequest(request);
-
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                throw new Exception(
-                    $"SamcoBrokerage.Authorize: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
-                );
-            }
-
-            var _indexIntradayCandleDataResponse = JsonConvert.DeserializeObject<indexIntradayCandleDataResponse>(response.Content);
-            return _indexIntradayCandleDataResponse;
-        }
-        public historicalCandleDataResponse getHistoricalCandleData(string symbolName, string fromDate, string exchange = "NSE", string toDate = null)
-        {
-
-            var request = new RestRequest(string.Format(CultureInfo.InvariantCulture, "/history/candleData"), Method.GET);
-            request.AddParameter("symbolName", symbolName);
-            request.AddParameter("fromDate", fromDate);
-            if (exchange != null)
-                request.AddParameter("exchange", exchange);
-            if (toDate != null)
-                request.AddParameter("toDate", toDate);
-            var response = ExecuteRestRequest(request);
-
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                throw new Exception(
-                    $"SamcoBrokerage.Authorize: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
-                );
-            }
-
-            var _historicalCandleDataResponse = JsonConvert.DeserializeObject<historicalCandleDataResponse>(response.Content);
-            return _historicalCandleDataResponse;
-        }
-
-
-
-        /// <summary>
-        /// Gets the Index historical candle data at daily time scale such as Open, high,
-        /// low, close, last traded price and volume within specific dates for a specific
-        /// index. From date is mandatory. End date is optional and defaults to Today.
-        /// </summary>
-        /// <param name="indexName"> </param>
-        /// <param name="fromDate"></param>
-        /// <param name="toDate"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        public indexHistoricalCandleDataResponse getIndexHistoricalCandleDataResponse(string indexName, string fromDate, string toDate = null)
-        {
-            var request = new RestRequest(string.Format(CultureInfo.InvariantCulture, "/history/indexCandleData"), Method.GET);
-            request.AddParameter("indexName", indexName);
-            request.AddParameter("fromDate", fromDate);
-            if (toDate != null)
-                request.AddParameter("toDate", toDate);
-            var response = ExecuteRestRequest(request);
-
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                throw new Exception(
-                    $"SamcoBrokerage.Authorize: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
-                );
-            }
-            var _indexHistoricalCandleDataResponse = JsonConvert.DeserializeObject<indexHistoricalCandleDataResponse>(response.Content);
-            return _indexHistoricalCandleDataResponse;
-        }
-
-
+        
 
 
         /// <summary>

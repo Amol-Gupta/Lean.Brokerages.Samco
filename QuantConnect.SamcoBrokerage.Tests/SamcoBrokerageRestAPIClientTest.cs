@@ -19,7 +19,7 @@ namespace QuantConnect.Tests.Brokerages.Samco
         [OneTimeSetUp]
         public void connectAndAuthenticate()
         {
-            _client = new SamcoBrokerageRestAPIClient();
+            _client = new SamcoBrokerageRestAPIClient(new SamcoSymbolMapper());
             var apiSecret = Config.Get("samco-client-password");
             var apiKey = Config.Get("samco-client-id");
             var yob = Config.Get("samco-year-of-birth");

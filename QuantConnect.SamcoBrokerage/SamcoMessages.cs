@@ -15,12 +15,68 @@
 
 using CsvHelper.Configuration.Attributes;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
+using QuantConnect.Data;
+using QuantConnect.Data.Market;
+using System.Globalization;
 
 namespace QuantConnect.Brokerages.Samco.SamcoMessages
 {
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+    /// <summary>
+    /// Custom DateTime JSON serializer/deserializer
+    /// </summary>
+    public class CustomDateTimeConverter : DateTimeConverterBase
+    {
+        /// <summary>
+        /// DateTime format
+        /// </summary>
+        private string Format= ("yyyy-mm-dd hh:MM:ss");
+
+        /*
+        public CustomDateTimeConverter(string _format)
+        {
+            Format = _format;
+        }
+        */
+        /// <summary>
+        /// Writes value to JSON
+        /// </summary>
+        /// <param name="writer">JSON writer</param>
+        /// <param name="value">Value to be written</param>
+        /// <param name="serializer">JSON serializer</param>
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            writer.WriteValue(((DateTime)value).ToString(Format));
+        }
+
+        /// <summary>
+        /// Reads value from JSON
+        /// </summary>
+        /// <param name="reader">JSON reader</param>
+        /// <param name="objectType">Target type</param>
+        /// <param name="existingValue">Existing value</param>
+        /// <param name="serializer">JSON serialized</param>
+        /// <returns>Deserialized DateTime</returns>
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            if (reader.Value == null)
+            {
+                return null;
+            }
+
+            var s = reader.Value.ToString();
+            DateTime result;
+            if (DateTime.TryParseExact(s, Format, CultureInfo.InvariantCulture, DateTimeStyles.None, out result))
+            {
+                return result;
+            }
+
+            return DateTime.Now;
+        }
+    }
 
     public class loginResponse
     {
@@ -93,19 +149,38 @@ namespace QuantConnect.Brokerages.Samco.SamcoMessages
     {
         public class IntradayCandleData
         {
-            public string dateTime { get; set; }
-            public string open { get; set; }
-            public string high { get; set; }
-            public string low { get; set; }
-            public string close { get; set; }
-            public string volume { get; set; }
+            [JsonConverter(typeof(CustomDateTimeConverter))]
+            public DateTime dateTime { get; set; }
+            public decimal open { get; set; }
+            public decimal high { get; set; }
+            public decimal low { get; set; }
+            public decimal close { get; set; }
+            public decimal volume { get; set; }
         }
         public string serverTime { get; set; }
         public string msgId { get; set; }
         public string status { get; set; }
         public string statusMessage { get; set; }
         public IntradayCandleData[] intradayCandleData { get; set; }
-
+        public IEnumerable<BaseData> toBaseData(Symbol leanSymbol,TimeSpan resolution)
+        {
+            foreach (var _candle in intradayCandleData)
+            {
+                yield return new TradeBar()
+                {
+                    Time = _candle.dateTime,
+                    Symbol = leanSymbol,
+                    Low = _candle.low,
+                    High = _candle.high,
+                    Open = _candle.open,
+                    Close = _candle.close,
+                    Volume = _candle.volume,
+                    Value = _candle.close,
+                    DataType = MarketDataType.TradeBar,
+                    Period = resolution
+                };
+            }
+        }
     }
 
     public class indexIntradayCandleDataResponse
@@ -116,14 +191,35 @@ namespace QuantConnect.Brokerages.Samco.SamcoMessages
         public string statusMessage { get; set; }
         public class IndexIntradayCandleData
         {
-            public string dateTime { get; set; }
-            public string open { get; set; }
-            public string high { get; set; }
-            public string low { get; set; }
-            public string close { get; set; }
-            public string volume { get; set; }
+            [JsonConverter(typeof(CustomDateTimeConverter))]
+            public DateTime dateTime { get; set; }
+            public decimal open { get; set; }
+            public decimal high { get; set; }
+            public decimal low { get; set; }
+            public decimal close { get; set; }
+            public decimal volume { get; set; }
         }
         public IndexIntradayCandleData[] indexIntradayCandleData { get; set; }
+
+        public IEnumerable<BaseData> toBaseData(Symbol leanSymbol, TimeSpan resolution)
+        {
+            foreach (var _candle in indexIntradayCandleData)
+            {
+                yield return new TradeBar()
+                {
+                    Time = _candle.dateTime,
+                    Symbol = leanSymbol,
+                    Low = _candle.low,
+                    High = _candle.high,
+                    Open = _candle.open,
+                    Close = _candle.close,
+                    Volume = _candle.volume,
+                    Value = _candle.close,
+                    DataType = MarketDataType.TradeBar,
+                    Period = resolution
+                };
+            }
+        }
     }
 
 
@@ -132,38 +228,76 @@ namespace QuantConnect.Brokerages.Samco.SamcoMessages
     {
         public class HistoricalCandleData
         {
-            public string date { get; set; }
-            public string open { get; set; }
-            public string high { get; set; }
-            public string low { get; set; }
-            public string close { get; set; }
-            public string ltp { get; set; }
-            public string volume { get; set; }
+            public DateTime date { get; set; }
+            public decimal open { get; set; }
+            public decimal high { get; set; }
+            public decimal low { get; set; }
+            public decimal close { get; set; }
+            public decimal ltp { get; set; }
+            public decimal volume { get; set; }
         }
         public string serverTime { get; set; }
         public string msgId { get; set; }
         public string status { get; set; }
         public string statusMessage { get; set; }
         public HistoricalCandleData[] historicalCandleData { get; set; }
+        public IEnumerable<BaseData> toBaseData(Symbol leanSymbol, TimeSpan resolution)
+        {
+            foreach (var _candle in historicalCandleData)
+            {
+                yield return new TradeBar()
+                {
+                    Time = _candle.date,
+                    Symbol = leanSymbol,
+                    Low = _candle.low,
+                    High = _candle.high,
+                    Open = _candle.open,
+                    Close = _candle.close,
+                    Volume = _candle.volume,
+                    Value = _candle.close,
+                    DataType = MarketDataType.TradeBar,
+                    Period = resolution
+                };
+            }
+        }
     }
 
     public class indexHistoricalCandleDataResponse
     {
         public class IndexHistoricalCandleData
         {
-            public string date { get; set; }
-            public string open { get; set; }
-            public string high { get; set; }
-            public string low { get; set; }
-            public string close { get; set; }
-            public string ltp { get; set; }
-            public string volume { get; set; }
+            public DateTime date { get; set; }
+            public decimal open { get; set; }
+            public decimal high { get; set; }
+            public decimal low { get; set; }
+            public decimal close { get; set; }
+            public decimal ltp { get; set; }
+            public decimal volume { get; set; }
         }
         public string serverTime { get; set; }
         public string msgId { get; set; }
         public string status { get; set; }
         public string statusMessage { get; set; }
         public IndexHistoricalCandleData[] indexHistoricalCandleData { get; set; }
+        public IEnumerable<BaseData> toBaseData(Symbol leanSymbol, TimeSpan resolution)
+        {
+            foreach (var _candle in indexHistoricalCandleData)
+            {
+                yield return new TradeBar()
+                {
+                    Time = _candle.date,
+                    Symbol = leanSymbol,
+                    Low = _candle.low,
+                    High = _candle.high,
+                    Open = _candle.open,
+                    Close = _candle.close,
+                    Volume = _candle.volume,
+                    Value = _candle.close,
+                    DataType = MarketDataType.TradeBar,
+                    Period = resolution
+                };
+            }
+        }
     }
 
     //TODO: to be phased out with newer implementation of API

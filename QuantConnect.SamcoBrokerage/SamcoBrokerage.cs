@@ -58,7 +58,7 @@ namespace QuantConnect.Brokerages.Samco
         private readonly ConcurrentDictionary<int, decimal> _fills = new ConcurrentDictionary<int, decimal>();
         private BrokerageConcurrentMessageHandler<WebSocketMessage> _messageHandler;
         private readonly ConcurrentDictionary<string, Order> _pendingOrders = new ConcurrentDictionary<string, Order>();
-        private SamcoBrokerageAPI _samcoAPI;
+        private SamcoBrokerageRestAPIClient _samcoAPI;
         private string _samcoApiKey;
         private string _samcoApiSecret;
         private string _samcoYob;
@@ -381,10 +381,9 @@ namespace QuantConnect.Brokerages.Samco
 
             var leanSymbol = request.Symbol;
             var securityExchange = _securityProvider.GetSecurity(leanSymbol).Exchange;
-            var exchange = _symbolMapper.GetExchange(leanSymbol);
-            var isIndex = leanSymbol.SecurityType == SecurityType.Index;
+            
 
-            var history = _samcoAPI.GetIntradayCandles(request.Symbol, exchange, request.StartTimeLocal, request.EndTimeLocal, request.Resolution, isIndex);
+            var history = _samcoAPI.GetHistory(request);
 
             foreach (var baseData in history)
             {
@@ -675,8 +674,8 @@ namespace QuantConnect.Brokerages.Samco
             _algorithm = algorithm;
             _securityProvider = algorithm?.Portfolio;
             _aggregator = aggregator;
-            _samcoAPI = new SamcoBrokerageAPI();
             _symbolMapper = new SamcoSymbolMapper();
+            _samcoAPI = new SamcoBrokerageRestAPIClient(_symbolMapper);
             _messageHandler = new BrokerageConcurrentMessageHandler<WebSocketMessage>(OnMessageImpl);
             _samcoApiKey = apiKey;
             _samcoApiSecret = apiSecret;
