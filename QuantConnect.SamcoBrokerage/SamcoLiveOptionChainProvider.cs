@@ -31,9 +31,9 @@ namespace QuantConnect.Brokerages.Samco
         /// <summary>
         /// Static constructor for the <see cref="SamcoLiveOptionChainProvider"/> class
         /// </summary>
-        public SamcoLiveOptionChainProvider(SamcoSymbolMapper symbolMapper)
+        public SamcoLiveOptionChainProvider()
         {
-            _symbolMapper = symbolMapper;
+            _symbolMapper = new SamcoSymbolMapper();
         }
 
         /// <summary>
