@@ -23,7 +23,7 @@ namespace QuantConnect.Brokerages.Samco
         /// <param name="interval"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public intradayCandleDataResponse GetIntradayCandleData(string symbolName, string fromDate, string exchange = "NSE", string toDate = null, string interval = null)
+        private intradayCandleDataResponse GetIntradayCandleData(string symbolName, string fromDate, string exchange = "NSE", string toDate = null, string interval = null)
         {
             var request = new RestRequest(string.Format(CultureInfo.InvariantCulture, "/intraday/candleData"), Method.GET);
             request.AddParameter("symbolName", symbolName);
@@ -40,7 +40,7 @@ namespace QuantConnect.Brokerages.Samco
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 throw new Exception(
-                    $"SamcoBrokerage.Authorize: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
+                    $"SamcoBrokerage.GetIntradayCandleData: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
                 );
             }
 
@@ -59,28 +59,38 @@ namespace QuantConnect.Brokerages.Samco
         /// <param name="interval"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public indexIntradayCandleDataResponse GetIndexIntradayCandleData(string indexName, string fromDate, string toDate = null, string interval = null)
+        private indexIntradayCandleDataResponse GetIndexIntradayCandleData(string indexName, string fromDate, string toDate = null, string interval = null)
         {
-            var request = new RestRequest(string.Format(CultureInfo.InvariantCulture, "/intraday/indexCandleData"), Method.GET);
+            if (indexName.ToUpperInvariant()=="NIFTY") { indexName = "NIFTY 50"; }
+            if (indexName.ToUpperInvariant() == "BANKNIFTY") { indexName = "NIFTY BANK"; }
+            if (indexName.ToUpperInvariant() == "FINNIFTY") { indexName = "NIFTY FIN SERVICE"; }
+
+            string str = string.Format(CultureInfo.InvariantCulture, $"/intraday/indexCandleData?indexName={indexName}&fromDate={fromDate}");
+            var request = new RestRequest(str, Method.GET);
+            request.AddHeader("Content-Type", "application/json");
+            request.AddHeader("Accept", "application/json");
             request.AddParameter("indexName", indexName);
             request.AddParameter("fromDate", fromDate);
             if (toDate != null)
-                request.AddParameter("toDate", toDate);
+                toDate = toDate.Substring(0, 17) + "00";
+            str = str +$"&toDate{toDate}";
             if (interval != null)
-                request.AddParameter("interval", interval);
+                str = str + $"&interval{interval}";
+            
             var response = ExecuteRestRequest(request);
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 throw new Exception(
-                    $"SamcoBrokerage.Authorize: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
+                    $"SamcoBrokerage.GetIndexIntradayCandleData: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
                 );
             }
 
             var _indexIntradayCandleDataResponse = JsonConvert.DeserializeObject<indexIntradayCandleDataResponse>(response.Content);
             return _indexIntradayCandleDataResponse;
         }
-        public historicalCandleDataResponse getHistoricalCandleData(string symbolName, string fromDate, string exchange = "NSE", string toDate = null)
+
+        private historicalCandleDataResponse getHistoricalCandleData(string symbolName, string fromDate, string exchange = "NSE", string toDate = null)
         {
 
             var request = new RestRequest(string.Format(CultureInfo.InvariantCulture, "/history/candleData"), Method.GET);
@@ -95,7 +105,7 @@ namespace QuantConnect.Brokerages.Samco
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 throw new Exception(
-                    $"SamcoBrokerage.Authorize: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
+                    $"SamcoBrokerage.getHistoricalCandleData: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
                 );
             }
 
@@ -115,8 +125,11 @@ namespace QuantConnect.Brokerages.Samco
         /// <param name="toDate"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public indexHistoricalCandleDataResponse getIndexHistoricalCandleData(string indexName, string fromDate, string toDate = null)
+        private indexHistoricalCandleDataResponse getIndexHistoricalCandleData(string indexName, string fromDate, string toDate = null)
         {
+            if (indexName.ToUpperInvariant() == "NIFTY") { indexName = "NIFTY 50"; }
+            if (indexName.ToUpperInvariant() == "BANKNIFTY") { indexName = "NIFTY BANK"; }
+
             var request = new RestRequest(string.Format(CultureInfo.InvariantCulture, "/history/indexCandleData"), Method.GET);
             request.AddParameter("indexName", indexName);
             request.AddParameter("fromDate", fromDate);
@@ -127,7 +140,7 @@ namespace QuantConnect.Brokerages.Samco
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 throw new Exception(
-                    $"SamcoBrokerage.Authorize: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
+                    $"SamcoBrokerage.getIndexHistoricalCandleData: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
                 );
             }
             var _indexHistoricalCandleDataResponse = JsonConvert.DeserializeObject<indexHistoricalCandleDataResponse>(response.Content);
@@ -141,7 +154,7 @@ namespace QuantConnect.Brokerages.Samco
             // Samco API only allows us to support history requests for TickType.Trade
             if (request.TickType != TickType.Trade)
             {
-                throw new Exception($"Samco API only allows us to support history requests for TickType.Trade" );
+                throw new Exception($"Samco API only supports history requests for TickType.Trade" );
             }
 
             if (request.Symbol.SecurityType != SecurityType.Equity && request.Symbol.SecurityType != SecurityType.Future &&
@@ -172,10 +185,7 @@ namespace QuantConnect.Brokerages.Samco
             }
 
             var leanSymbol = request.Symbol;
-
-            var brokerageSymbol = _symbolMapper.GetBrokerageSymbol(leanSymbol);
-            var securityExchange = _securityProvider.GetSecurity(leanSymbol).Exchange;
-            var exchange = _symbolMapper.GetExchange(leanSymbol);
+            var brokerageSymbol = SamcoInstrumentList.Instance().getTradingSymbolFromLeanSymbol(leanSymbol);
             var isIndex = leanSymbol.SecurityType == SecurityType.Index;
 
             string _fromDateStr;
@@ -191,24 +201,24 @@ namespace QuantConnect.Brokerages.Samco
             }
 
             if (isIndex && request.Resolution == Resolution.Daily) {
-                _fromDateStr = request.StartTimeUtc.ToString("yyyy-MM-dd");
-                _toDateStr = request.EndTimeUtc.ToString("yyyy-MM-dd");
+                _fromDateStr = request.StartTimeLocal.ToString("yyyy-MM-dd");
+                _toDateStr = request.EndTimeLocal.ToString("yyyy-MM-dd");
                 _data = getIndexHistoricalCandleData(brokerageSymbol, _fromDateStr, _toDateStr).toBaseData(leanSymbol,_resolutionTimeSpan);
             }
             else if (isIndex && (request.Resolution == Resolution.Minute || request.Resolution == Resolution.Hour)) {
-                _fromDateStr = request.StartTimeUtc.ToString("yyyy-MM-dd hh:mm:ss");
-                _toDateStr = request.EndTimeUtc.ToString("yyyy-MM-dd hh:mm:ss");
+                _fromDateStr = request.StartTimeLocal.ToString("yyyy-MM-dd HH:mm:ss");
+                _toDateStr = request.EndTimeLocal.ToString("yyyy-MM-dd HH:mm:ss");
                 _data = GetIndexIntradayCandleData(brokerageSymbol, _fromDateStr, _toDateStr).toBaseData(leanSymbol, _resolutionTimeSpan);
             }
             else if (!isIndex && request.Resolution == Resolution.Daily) {
-                _fromDateStr = request.StartTimeUtc.ToString("yyyy-MM-dd");
-                _toDateStr = request.EndTimeUtc.ToString("yyyy-MM-dd");
+                _fromDateStr = request.StartTimeLocal.ToString("yyyy-MM-dd");
+                _toDateStr = request.EndTimeLocal.ToString("yyyy-MM-dd");
                 _data = getHistoricalCandleData(brokerageSymbol, _fromDateStr, _toDateStr).toBaseData(leanSymbol, _resolutionTimeSpan);
             }
             else if (!isIndex &&  (request.Resolution == Resolution.Minute || request.Resolution == Resolution.Hour)) {
-                _fromDateStr = request.StartTimeUtc.ToString("yyyy-MM-dd hh:mm:ss");
-                _toDateStr = request.EndTimeUtc.ToString("yyyy-MM-dd hh:mm:ss");
-                _data = GetIndexIntradayCandleData(brokerageSymbol, _fromDateStr, _toDateStr).toBaseData(leanSymbol, _resolutionTimeSpan);
+                _fromDateStr = request.StartTimeLocal.ToString("yyyy-MM-dd HH:mm:ss");
+                _toDateStr = request.EndTimeLocal.ToString("yyyy-MM-dd HH:mm:ss");
+                _data = GetIntradayCandleData(brokerageSymbol, _fromDateStr, _toDateStr).toBaseData(leanSymbol, _resolutionTimeSpan);
             }
             else { throw new Exception("unspported combination of resolution and instrument"); }
             return _data;

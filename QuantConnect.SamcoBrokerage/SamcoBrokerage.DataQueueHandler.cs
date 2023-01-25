@@ -89,6 +89,7 @@ namespace QuantConnect.Brokerages.Samco
         /// <returns>True if this data provider can get data for the symbol, false otherwise</returns>
         private static bool CanSubscribe(Symbol symbol)
         {
+            if (symbol.IsCanonical()) { return false; }
             var market = symbol.ID.Market;
             var securityType = symbol.ID.SecurityType;
             if (symbol.Value.IndexOfInvariant("universe", true) != -1) return false;

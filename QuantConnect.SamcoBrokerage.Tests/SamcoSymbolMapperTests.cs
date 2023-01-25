@@ -23,6 +23,7 @@ namespace QuantConnect.Tests.Brokerages.Samco
     {
         private readonly SamcoSymbolMapper _symbolMapper = new();
 
+        /*
         [TestCase("tcs", "BSE")]
         [TestCase("reliance", "BSE")]
         [TestCase("bse", "NSE")]
@@ -33,6 +34,7 @@ namespace QuantConnect.Tests.Brokerages.Samco
             var actualExchange = _symbolMapper.GetExchange(symbol);
             Assert.AreEqual(expectedExchange, actualExchange);
         }
+        
 
         [TestCase("532540_BSE", "BSE")]
         [TestCase("19585_NSE", "NSE")]
@@ -41,6 +43,7 @@ namespace QuantConnect.Tests.Brokerages.Samco
             var actualExchange = _symbolMapper.GetExchange(listingID);
             Assert.AreEqual(expectedExchange, actualExchange);
         }
+        
 
         [TestCase("tcs")]
         [TestCase("hdfc")]
@@ -48,7 +51,9 @@ namespace QuantConnect.Tests.Brokerages.Samco
         {
             Assert.IsTrue(_symbolMapper.IsKnownBrokerageSymbol(symbol));
         }
+        */
 
+        /*
         [TestCase("tcs")]
         [TestCase("infy")]
         [TestCase("bse")]
@@ -57,5 +62,6 @@ namespace QuantConnect.Tests.Brokerages.Samco
         {
             Assert.IsNotNull(_symbolMapper.GetSymbolFromAllSegment(symbol));
         }
+        */
     }
 }

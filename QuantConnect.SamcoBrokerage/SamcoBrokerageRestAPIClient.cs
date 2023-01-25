@@ -28,10 +28,10 @@ namespace QuantConnect.Brokerages.Samco
         /// <summary>
         /// Constructor for Samco API
         /// </summary>
-        public SamcoBrokerageRestAPIClient( SamcoSymbolMapper symbolMapper)
+        public SamcoBrokerageRestAPIClient()
 
         {
-            _symbolMapper = symbolMapper;
+            _symbolMapper = new SamcoSymbolMapper();
             
             RestClient = new RestClient("https://api.stocknote.com");
         }
@@ -51,6 +51,7 @@ namespace QuantConnect.Brokerages.Samco
         private void SignRequest(IRestRequest request)
         {
             request.AddHeader(_tokenHeader, _token);
+            request.AddHeader("Accept", "application/json");
         }
 
         /// <summary>
@@ -93,9 +94,16 @@ namespace QuantConnect.Brokerages.Samco
         {
             Log.Trace("SamcoBrokerageAPI.Authorize(): Getting new Token");
             var request = new RestRequest("/login", Method.POST);
+            request.AddHeader("Content-Type", "application/json");
+            request.AddHeader("Accept", "application/json");
+            request.AddJsonBody(new { userId = userId, password = password, yob = yob });
+            /*
+             
             request.AddParameter("userId", userId);
             request.AddParameter("password", password);
             request.AddParameter("yob", yob);
+            */
+
             IRestResponse response = RestClient.Execute(request);
             if (response.StatusCode != HttpStatusCode.OK)
             {
@@ -123,7 +131,7 @@ namespace QuantConnect.Brokerages.Samco
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 throw new Exception(
-                    $"SamcoBrokerage.Authorize: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
+                    $"SamcoBrokerage.GetIndexQuote: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
                 );
             }
             var _indexQuoteResponse = JsonConvert.DeserializeObject<indexQuoteResponse>(response.Content);
@@ -146,7 +154,7 @@ namespace QuantConnect.Brokerages.Samco
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 throw new Exception(
-                    $"SamcoBrokerage.Authorize: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
+                    $"SamcoBrokerage.getQuote: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
                 );
             }
             var _QuoteResponse = JsonConvert.DeserializeObject<QuoteResponse>(response.Content);
@@ -180,7 +188,7 @@ namespace QuantConnect.Brokerages.Samco
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 throw new Exception(
-                    $"SamcoBrokerage.Authorize: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
+                    $"SamcoBrokerage.getOptionChain: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
                 );
             }
             var _optionChainResponse = JsonConvert.DeserializeObject<optionChainResponse>(response.Content);
@@ -205,7 +213,7 @@ namespace QuantConnect.Brokerages.Samco
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 throw new Exception(
-                    $"SamcoBrokerage.Authorize: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
+                    $"SamcoBrokerage.searchEquityDerivScrips: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
                 );
             }
             var _eqDerivSearchResponse = JsonConvert.DeserializeObject<eqDerivSearchResponse>(response.Content);
@@ -225,7 +233,7 @@ namespace QuantConnect.Brokerages.Samco
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 throw new Exception(
-                    $"SamcoBrokerage.Authorize: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
+                    $"SamcoBrokerage.CancelOrder: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
                 );
             }
             var _SamcoOrderResponse = JsonConvert.DeserializeObject<SamcoOrderResponse>(response.Content);
@@ -244,7 +252,7 @@ namespace QuantConnect.Brokerages.Samco
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 throw new Exception(
-                    $"SamcoBrokerage.Authorize: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
+                    $"SamcoBrokerage.getTradebook: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
                 );
             }
 
@@ -274,7 +282,7 @@ namespace QuantConnect.Brokerages.Samco
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 throw new Exception(
-                    $"SamcoBrokerage.Authorize: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
+                    $"SamcoBrokerage.GetHoldings: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
                 );
             }
 
@@ -294,10 +302,11 @@ namespace QuantConnect.Brokerages.Samco
         {
             var request = new RestRequest(string.Format(CultureInfo.InvariantCulture, "order/orderBook"), Method.GET);
             var response = ExecuteRestRequest(request);
-            if (response.StatusCode != HttpStatusCode.OK)
+            if ((response.StatusCode != HttpStatusCode.OK) && (response.StatusDescription.Contains( "No Orders found") ))
             {
+                
                 throw new Exception(
-                    $"SamcoBrokerage.Authorize: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
+                    $"SamcoBrokerage.GetOrderBook: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
                 );
             }
 
@@ -317,7 +326,7 @@ namespace QuantConnect.Brokerages.Samco
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 throw new Exception(
-                    $"SamcoBrokerage.Authorize: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
+                    $"SamcoBrokerage.GetOrderDetails: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
                 );
             }
 
@@ -334,10 +343,10 @@ namespace QuantConnect.Brokerages.Samco
         {
             var request = new RestRequest(string.Format(CultureInfo.InvariantCulture, "position/getPositions?positionType={0}", positionType), Method.GET);
             var response = ExecuteRestRequest(request);
-            if (response.StatusCode != HttpStatusCode.OK)
+            if (response.StatusCode != HttpStatusCode.OK && (response.StatusDescription.Contains("No Positions found")))
             {
                 throw new Exception(
-                    $"SamcoBrokerage.Authorize: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
+                    $"SamcoBrokerage.GetPositions: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
                 );
             }
             var positionsReponse = JsonConvert.DeserializeObject<PositionsResponse>(response.Content);
@@ -376,7 +385,7 @@ namespace QuantConnect.Brokerages.Samco
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 throw new Exception(
-                    $"SamcoBrokerage.GetQuote: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
+                    $"SamcoBrokerage.GetUserLimits: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
                 );
             }
             var _userLimitResponse = JsonConvert.DeserializeObject<UserLimitResponse>(response.Content);
@@ -404,7 +413,7 @@ namespace QuantConnect.Brokerages.Samco
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 throw new Exception(
-                    $"SamcoBrokerage.GetQuote: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
+                    $"SamcoBrokerage.ModifyOrder: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
                 );
             }
             var _orderResponse = JsonConvert.DeserializeObject<SamcoOrderResponse>(response.Content);
@@ -449,7 +458,7 @@ namespace QuantConnect.Brokerages.Samco
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 throw new Exception(
-                    $"SamcoBrokerage.GetQuote: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
+                    $"SamcoBrokerage.PlaceOrder: request failed: [{(int)response.StatusCode}] {response.StatusDescription}, Content: {response.Content}, ErrorMessage: {response.ErrorMessage}"
                 );
             }
             var orderResponse = JsonConvert.DeserializeObject<SamcoOrderResponse>(response.Content);

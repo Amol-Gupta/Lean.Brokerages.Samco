@@ -19,7 +19,7 @@ namespace QuantConnect.Tests.Brokerages.Samco
         [OneTimeSetUp]
         public void connectAndAuthenticate()
         {
-            _client = new SamcoBrokerageRestAPIClient(new SamcoSymbolMapper());
+            _client = new SamcoBrokerageRestAPIClient();
             var apiSecret = Config.Get("samco-client-password");
             var apiKey = Config.Get("samco-client-id");
             var yob = Config.Get("samco-year-of-birth");
@@ -34,7 +34,15 @@ namespace QuantConnect.Tests.Brokerages.Samco
         }
 
        
-        
+        [Ignore("Testcase only used during development"),Test]
+        public void testLogin()
+        {
+            _client = new SamcoBrokerageRestAPIClient();
+            var apiSecret = Config.Get("samco-client-password");
+            var apiKey = Config.Get("samco-client-id");
+            var yob = Config.Get("samco-year-of-birth");
+            _client.Authorize(apiKey, apiSecret, yob);
+        }
         
 
         //[TestCase("NIFTY")]
@@ -54,6 +62,7 @@ namespace QuantConnect.Tests.Brokerages.Samco
                 
             }
             Console.WriteLine(JsonConvert.SerializeObject(resp, Formatting.Indented));
+            System.Threading.Thread.Sleep(1000);
         }
 
 
@@ -70,6 +79,7 @@ namespace QuantConnect.Tests.Brokerages.Samco
                 
             }
             Console.WriteLine(JsonConvert.SerializeObject(resp, Formatting.Indented));
+            System.Threading.Thread.Sleep(1000);
         }
 
         
@@ -87,11 +97,12 @@ namespace QuantConnect.Tests.Brokerages.Samco
                 
             }
             Console.WriteLine(JsonConvert.SerializeObject(resp, Formatting.Indented));
+            System.Threading.Thread.Sleep(1000);
         }
 
         [TestCase("HDFC")]
         [TestCase("NIFTY")]
-        [TestCase("BANKNIFTY")]
+        [TestCase("NIFTY BANK")]
         [TestCase("TCS")]
         [TestCase("BAJFINANCE")]
         public void searchEquityDerivScrips(string searchSymbolName)
@@ -105,6 +116,7 @@ namespace QuantConnect.Tests.Brokerages.Samco
 
             }
             Console.WriteLine(JsonConvert.SerializeObject(resp, Formatting.Indented));
+            System.Threading.Thread.Sleep(1000);
         }
 
         
@@ -120,6 +132,7 @@ namespace QuantConnect.Tests.Brokerages.Samco
 
             }
             Console.WriteLine(JsonConvert.SerializeObject(resp, Formatting.Indented));
+            System.Threading.Thread.Sleep(1000);
         }
         
         [Test]
@@ -134,6 +147,7 @@ namespace QuantConnect.Tests.Brokerages.Samco
 
             }
             Console.WriteLine(JsonConvert.SerializeObject(resp, Formatting.Indented));
+            System.Threading.Thread.Sleep(1000);
         }
 
         [Test]
@@ -148,6 +162,7 @@ namespace QuantConnect.Tests.Brokerages.Samco
 
             }
             Console.WriteLine(JsonConvert.SerializeObject(resp, Formatting.Indented));
+            System.Threading.Thread.Sleep(1000);
         }
 
 
@@ -159,10 +174,11 @@ namespace QuantConnect.Tests.Brokerages.Samco
             Assert.IsTrue(resp.status == "Success");
             if (resp.status == "Success")
             {
-                Console.WriteLine("search request executed successfully");
+                Console.WriteLine("get Positions executed successfully");
 
             }
             Console.WriteLine(JsonConvert.SerializeObject(resp, Formatting.Indented));
+            System.Threading.Thread.Sleep(1000);
         }
 
         

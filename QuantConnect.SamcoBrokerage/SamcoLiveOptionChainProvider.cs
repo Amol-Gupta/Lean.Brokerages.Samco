@@ -26,14 +26,14 @@ namespace QuantConnect.Brokerages.Samco
     /// </summary>
     public class SamcoLiveOptionChainProvider : IOptionChainProvider
     {
-        private readonly SamcoSymbolMapper _symbolMapper;
+       
 
         /// <summary>
         /// Static constructor for the <see cref="SamcoLiveOptionChainProvider"/> class
         /// </summary>
         public SamcoLiveOptionChainProvider()
         {
-            _symbolMapper = new SamcoSymbolMapper();
+            
         }
 
         /// <summary>
@@ -44,12 +44,11 @@ namespace QuantConnect.Brokerages.Samco
         /// <returns>Option chain</returns>
         public IEnumerable<Symbol> GetOptionContractList(Symbol symbol, DateTime date)
         {
-            var symbols = new List<Symbol>();
-            foreach (var scripMaster in _symbolMapper.SamcoSymbols)
-            {
-                symbols.Add(SamcoSymbolMapper.CreateLeanSymbol(scripMaster));
-            }
-            return symbols.Where(s => s.SecurityType == SecurityType.Option && s.ID.Symbol == symbol.Value);
+            var l = SamcoInstrumentList.Instance()._leanSymbolList;
+            var m=l.Where(s =>
+               ( ( s.SecurityType == SecurityType.Option) || (s.SecurityType == SecurityType.IndexOption))
+            && s.ID.Underlying == symbol.ID);
+            return m;
         }
     }
 }

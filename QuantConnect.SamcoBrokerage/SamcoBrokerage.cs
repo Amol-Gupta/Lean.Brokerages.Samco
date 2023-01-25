@@ -46,7 +46,7 @@ namespace QuantConnect.Brokerages.Samco
     /// Samco Brokerage implementation
     /// </summary>
     [BrokerageFactory(typeof(SamcoBrokerageFactory))]
-    public partial class SamcoBrokerage : Brokerage, IDataQueueHandler
+    public partial class SamcoBrokerage : Brokerage, IDataQueueHandler, IDataQueueUniverseProvider
     {
         private const int ConnectionTimeout = 30000;
         private IDataAggregator _aggregator;
@@ -71,7 +71,7 @@ namespace QuantConnect.Brokerages.Samco
         private ISecurityProvider _securityProvider;
         private DataQueueHandlerSubscriptionManager _subscriptionManager;
         private readonly ConcurrentDictionary<string, Symbol> _subscriptionsById = new ConcurrentDictionary<string, Symbol>();
-        private SamcoSymbolMapper _symbolMapper;
+        private ISymbolMapper _symbolMapper;
 
         //EQUITY / COMMODITY
         private string _tradingSegment;
@@ -241,7 +241,7 @@ namespace QuantConnect.Brokerages.Samco
                             Holding holding = new Holding
                             {
                                 AveragePrice = Convert.ToDecimal(position.AveragePrice, CultureInfo.InvariantCulture),
-                                Symbol = _symbolMapper.GetLeanSymbol(position.TradingSymbol, _symbolMapper.GetBrokerageSecurityType(position.TradingSymbol)),
+                                Symbol = SamcoInstrumentList.Instance().GetLeanSymbolFromSymbolCode(position.ProductCode),
                                 MarketPrice = Convert.ToDecimal(position.LastTradedPrice, CultureInfo.InvariantCulture),
                                 Quantity = position.NetQuantity,
                                 UnrealizedPnL = (Convert.ToDecimal(position.AveragePrice, CultureInfo.InvariantCulture) - Convert.ToDecimal(position.LastTradedPrice,
@@ -266,7 +266,7 @@ namespace QuantConnect.Brokerages.Samco
                         Holding holding = new Holding
                         {
                             AveragePrice = item.averagePrice,
-                            Symbol = _symbolMapper.GetLeanSymbol(item.tradingSymbol, _symbolMapper.GetBrokerageSecurityType(item.tradingSymbol)),
+                            Symbol = SamcoInstrumentList.Instance().getLeanSymbolFromTradingSymbol(item.tradingSymbol),
                             MarketPrice = item.lastTradedPrice,
                             Quantity = item.holdingsQuantity,
                             UnrealizedPnL = (item.averagePrice - item.lastTradedPrice) * item.holdingsQuantity,
@@ -291,7 +291,7 @@ namespace QuantConnect.Brokerages.Samco
                             Holding holding = new Holding
                             {
                                 AveragePrice = Convert.ToDecimal(position.AveragePrice, CultureInfo.InvariantCulture),
-                                Symbol = _symbolMapper.GetLeanSymbol(position.TradingSymbol, _symbolMapper.GetBrokerageSecurityType(position.TradingSymbol)),
+                                Symbol = SamcoInstrumentList.Instance().getLeanSymbolFromTradingSymbol(position.TradingSymbol),
                                 MarketPrice = Convert.ToDecimal(position.LastTradedPrice, CultureInfo.InvariantCulture),
                                 Quantity = position.NetQuantity,
                                 UnrealizedPnL = (Convert.ToDecimal(position.AveragePrice, CultureInfo.InvariantCulture) - Convert.ToDecimal(position.LastTradedPrice,
@@ -374,7 +374,7 @@ namespace QuantConnect.Brokerages.Samco
                 yield break;
             }
 
-            if (request.Resolution != Resolution.Minute)
+            if (request.Resolution != Resolution.Minute && request.Resolution != Resolution.Daily)
             {
                 throw new ArgumentException($"SamcoBrokerage.ConvertResolution: Unsupported resolution type: {request.Resolution}");
             }
@@ -414,8 +414,10 @@ namespace QuantConnect.Brokerages.Samco
 
                     var itemTotalQty = Convert.ToInt32(item.totalQuantity, CultureInfo.InvariantCulture);
                     var originalQty = Convert.ToInt32(item.quantity, CultureInfo.InvariantCulture);
-                    var brokerageSecurityType = _symbolMapper.GetBrokerageSecurityType(item.tradingSymbol);
-                    var symbol = _symbolMapper.GetLeanSymbol(item.tradingSymbol, brokerageSecurityType);
+                    //var samcoScrip = _symbolMapper.GetBrokerageSecurityType(item.tradingSymbol);
+                    //var samcoScrip = SamcoInstrumentList.Instance().GetScripMasterFromSymbolCode(item.tradingSymbol);
+
+                    var symbol = SamcoInstrumentList.Instance().getLeanSymbolFromTradingSymbol(item.tradingSymbol);
                     var time = Convert.ToDateTime(item.orderTime, CultureInfo.InvariantCulture);
                     var price = Convert.ToDecimal(item.orderPrice, CultureInfo.InvariantCulture);
                     var quantity = item.transactionType.ToLowerInvariant() == "sell" ? -itemTotalQty : originalQty;
@@ -465,8 +467,8 @@ namespace QuantConnect.Brokerages.Samco
         /// <returns>Quote Response</returns>
         public QuoteResponse GetQuote(Symbol symbol)
         {
-            var exchange = _symbolMapper.GetExchange(symbol);
-            return _samcoAPI.GetQuote(symbol.ID.Symbol, exchange);
+            
+            return _samcoAPI.GetQuote(symbol.ID.Symbol);
         }
 
         /// <summary>
@@ -498,8 +500,8 @@ namespace QuantConnect.Brokerages.Samco
                 {
                     throw new ArgumentException("Please set ProductType in config or provide a value in DefaultOrderProperties");
                 }
-
-                SamcoOrderResponse orderResponse = _samcoAPI.PlaceOrder(order, order.Symbol.Value, orderProperties.Exchange.ToString().ToUpperInvariant(), samcoProductType);
+                string tradingSymbol = SamcoInstrumentList.Instance().getTradingSymbolFromLeanSymbol(order.Symbol);
+                SamcoOrderResponse orderResponse = _samcoAPI.PlaceOrder(order, tradingSymbol, orderProperties.Exchange.ToString().ToUpperInvariant(), samcoProductType);
 
                 if (orderResponse.validationErrors != null)
                 {
@@ -582,28 +584,34 @@ namespace QuantConnect.Brokerages.Samco
             {
                 try
                 {
-                    var scripList = _symbolMapper.GetSamcoTokenList(symbol);
-                    foreach (var scrip in scripList)
-                    {
-                        var listingId = scrip.SymbolCode;
-                        if (!_subscribeInstrumentTokens.Contains(listingId))
+                    
+                        //string listingID = _symbolMapper.getBrokeageSymbol (symbol);
+                        string listingID = SamcoInstrumentList.Instance().getSymbolCodeFromLeanSymbol(symbol);
+                        //foreach (var scrip in scripList)
                         {
-                            sub.request.data.symbols.Add(new Subscription.Symbol { symbol = listingId });
-                            _subscribeInstrumentTokens.Add(listingId);
-                            _unSubscribeInstrumentTokens.Remove(listingId);
-                            _subscriptionsById[listingId] = symbol;
+                            //var listingId = scrip.SymbolCode;
+                            if (!_subscribeInstrumentTokens.Contains(listingID))
+                            {
+                                sub.request.data.symbols.Add(new Subscription.Symbol { symbol = listingID });
+                                _subscribeInstrumentTokens.Add(listingID);
+                                _unSubscribeInstrumentTokens.Remove(listingID);
+                                _subscriptionsById[listingID] = symbol;
+                            }
                         }
-                    }
+                    
                 }
                 catch (Exception exception)
                 {
                     throw new Exception($"SamcoBrokerage.Subscribe(): Message: {exception.Message} Exception: {exception.InnerException}");
                 }
             }
-            var request = JsonConvert.SerializeObject(sub);
-            // required to flush input json as per samco forum
-            request = request + "\n";
-            WebSocket.Send(request);
+            if (sub.request.data.symbols.Count() > 0)
+            {
+                var request = JsonConvert.SerializeObject(sub);
+                // required to flush input json as per samco forum
+                request = request + "\n";
+                WebSocket.Send(request);
+            }
         }
 
         /// <summary>
@@ -675,7 +683,7 @@ namespace QuantConnect.Brokerages.Samco
             _securityProvider = algorithm?.Portfolio;
             _aggregator = aggregator;
             _symbolMapper = new SamcoSymbolMapper();
-            _samcoAPI = new SamcoBrokerageRestAPIClient(_symbolMapper);
+            _samcoAPI = new SamcoBrokerageRestAPIClient();
             _messageHandler = new BrokerageConcurrentMessageHandler<WebSocketMessage>(OnMessageImpl);
             _samcoApiKey = apiKey;
             _samcoApiSecret = apiSecret;
@@ -702,7 +710,7 @@ namespace QuantConnect.Brokerages.Samco
             _subscriptionManager = subscriptionManager;
             _fillMonitorTask = Task.Factory.StartNew(FillMonitorAction, _ctsFillMonitor.Token);
 
-            ValidateSubscription();
+            //ValidateSubscription();
             Log.Trace("SamcoBrokerage(): Start Samco Brokerage");
         }
 
@@ -742,7 +750,7 @@ namespace QuantConnect.Brokerages.Samco
                     .Value;
                 if (order == null)
                 {
-                    order = _algorithm.Transactions.GetOrderByBrokerageId(brokerId);
+                    order = _algorithm.Transactions.GetOrdersByBrokerageId(brokerId)?.SingleOrDefault();
                     if (order == null)
                     {
                         // not our order, nothing else to do here
@@ -750,8 +758,9 @@ namespace QuantConnect.Brokerages.Samco
                     }
                 }
 
-                var brokerageSecurityType = _symbolMapper.GetBrokerageSecurityType(orderDetails.tradingSymbol);
-                var symbol = _symbolMapper.GetLeanSymbol(orderDetails.tradingSymbol, brokerageSecurityType);
+                //var brokerageSecurityType = _symbolMapper.GetBrokerageSecurityType(orderDetails.tradingSymbol);
+                //var symbol = _symbolMapper.GetLeanSymbol(orderDetails.tradingSymbol, brokerageSecurityType);
+                var symbol = SamcoInstrumentList.Instance().getLeanSymbolFromTradingSymbol(orderDetails.tradingSymbol);
                 var fillPrice = decimal.Parse(orderDetails.filledPrice, NumberStyles.Float, CultureInfo.InvariantCulture);
                 var fillQuantity = decimal.Parse(orderDetails.filledQuantity, NumberStyles.Float, CultureInfo.InvariantCulture);
                 var updTime = DateTime.UtcNow;
@@ -1016,8 +1025,10 @@ namespace QuantConnect.Brokerages.Samco
                     {
                         var upd = raw.response.data;
                         var listingid = raw.response.data.sym;
-                        var exchange = _symbolMapper.GetExchange(listingid);
-                        var sym = _subscriptionsById[listingid];
+                        var scrip = SamcoInstrumentList.Instance().GetScripMasterFromSymbolCode(listingid);
+                        var exchange = scrip.Exchange;
+                        var sym = SamcoInstrumentList.Instance().GetLeanSymbolFromSymbolCode(listingid);
+                        //var sym = _subscriptionsById[listingid];
 
                         EmitQuoteTick(sym, exchange, upd.avgPr, upd.bPr, upd.bSz, upd.aPr, upd.aSz);
 
@@ -1054,7 +1065,7 @@ namespace QuantConnect.Brokerages.Samco
                     .Value;
                 if (order == null)
                 {
-                    order = _algorithm.Transactions.GetOrderByBrokerageId(brokerId);
+                    order = _algorithm.Transactions.GetOrdersByBrokerageId(brokerId)?.SingleOrDefault(); ;
                     if (order == null)
                     {
                         // not our order, nothing else to do here
@@ -1084,7 +1095,7 @@ namespace QuantConnect.Brokerages.Samco
                 {
                     try
                     {
-                        var scripList = _symbolMapper.GetSamcoTokenList(symbol);
+                        var scripList = SamcoInstrumentList.Instance()._samcoTradableScripList;
                         foreach (var scrip in scripList)
                         {
                             var listingId = scrip.SymbolCode;
@@ -1265,5 +1276,7 @@ namespace QuantConnect.Brokerages.Samco
                 Environment.Exit(1);
             }
         }
+
+        
     }
 }

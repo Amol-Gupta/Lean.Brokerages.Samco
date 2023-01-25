@@ -278,10 +278,10 @@ namespace QuantConnect.Brokerages.Samco.SamcoMessages
         public string msgId { get; set; }
         public string status { get; set; }
         public string statusMessage { get; set; }
-        public IndexHistoricalCandleData[] indexHistoricalCandleData { get; set; }
+        public IndexHistoricalCandleData[] indexCandleData { get; set; }
         public IEnumerable<BaseData> toBaseData(Symbol leanSymbol, TimeSpan resolution)
         {
-            foreach (var _candle in indexHistoricalCandleData)
+            foreach (var _candle in indexCandleData)
             {
                 yield return new TradeBar()
                 {

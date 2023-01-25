@@ -128,8 +128,9 @@ namespace QuantConnect.ToolBox.SamcoDataDownloader
             {
                 throw new ArgumentException($"Resolution not available: {resolution}");
             } 
-
-            if (!_symbolMapper.IsKnownBrokerageSymbol(symbol.ID.Symbol))
+            
+            var flag = SamcoInstrumentList.Instance()._leanSymbolList.Contains(symbol);
+            if (!flag)
             {
                 throw new ArgumentException($"The ticker {symbol.Value} is not available.");
             }   
@@ -144,7 +145,9 @@ namespace QuantConnect.ToolBox.SamcoDataDownloader
                 throw new ArgumentException("Invalid security type: " + securityType);
             }
 
-            var exchange = _symbolMapper.GetExchange(symbol);
+            var symbolCode = SamcoInstrumentList.Instance().getSymbolCodeFromLeanSymbol(symbol);
+            var exchange = SamcoInstrumentList.Instance().GetScripMasterFromSymbolCode(symbolCode).Exchange;
+
             var isIndex = securityType == SecurityType.Index;
             var history = _samcoAPI.GetIntradayCandles(symbol, exchange, startUtc, endUtc, isIndex: isIndex);
             return history;
